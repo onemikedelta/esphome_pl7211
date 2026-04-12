@@ -1,9 +1,10 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import switch
-from esphome.const import CONF_ID, CONF_BIT
+from esphome.const import CONF_ID
 from . import pl7211_ns, CONF_PL7211_ID, PL7211Component
 
+CONF_BIT = "bit"
 PL7211Switch = pl7211_ns.class_('PL7211Switch', switch.Switch, cg.Component)
 
 CONFIG_SCHEMA = switch.switch_schema(PL7211Switch).extend({
