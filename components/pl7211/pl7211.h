@@ -25,6 +25,7 @@ class PL7211Component : public PollingComponent,
   // 8-bit, 16-bit ve 48-bit SPI Okuma/Yazma Komutları
   void write_register_8(uint16_t addr, uint8_t data);
   void write_register_16(uint16_t addr, uint16_t data);
+  uint8_t read_register_8(uint16_t addr);
   uint16_t read_register_16(uint16_t addr);
   uint64_t read_register_48(uint16_t addr);
 

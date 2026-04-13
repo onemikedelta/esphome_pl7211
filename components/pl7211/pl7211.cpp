@@ -13,19 +13,22 @@ void PL7211Component::setup() {
   // Power-on delay to let the internal DSP/MTP load
   delay(200); 
 
-  // Enable SPI access to GPIOs by writing to SPI_CFG register (0x380D)
-  // Setting bit 3 low allows SPI to control GPIOs instead of DSP
-  this->write_register_8(0x380D, 0x10); 
+  this->write_register_8(0x3803, 0x00);
+  this->write_register_8(0x3804, 0x00);
   delay(10);
 
-  // Set GPIO 9, 12, and 13 as outputs
-  // Register 0x3902 is GPIO_DIR_L (0-7), 0x3903 is GPIO_DIR_H (8-15)
+  uint8_t iocfg = this->read_register_8(0x380D);
+  iocfg &= ~(1 << 3); // 3. Biti sıfırla (0: Register kontrolü, 1: DSP kontrolü)
+  this->write_register_8(0x380D, iocfg); 
+  delay(10);
+
+  // Register 0x3902 GPIO_DIR_L (0-7), 0x3903 GPIO_DIR_H (8-15)
   // GPIO 9  -> Bit 1 of 0x3903 (bit 9-8 = 1)
   // GPIO 12 -> Bit 4 of 0x3903 (bit 12-8 = 4)
   // GPIO 13 -> Bit 5 of 0x3903 (bit 13-8 = 5)
   uint8_t dir_h = (1 << 1) | (1 << 4) | (1 << 5); 
-  this->write_register_8(0x3902, 0x00); // Pins 0-7 as inputs
-  this->write_register_8(0x3903, dir_h); // Specific pins in 8-15 as outputs
+  this->write_register_8(0x3902, 0x00);  // Pin 0-7 Input
+  this->write_register_8(0x3903, dir_h); // Pin 9, 12, 13 Output
   
   ESP_LOGD(TAG, "GPIO Directions configured. DIR_H: 0x%02X", dir_h);
 }
@@ -34,6 +37,17 @@ void PL7211Component::dump_config() {
   ESP_LOGCONFIG(TAG, "PL7211:");
   LOG_PIN("  CS Pin: ", this->cs_);
   LOG_UPDATE_INTERVAL(this);
+}
+
+uint8_t PL7211Component::read_register_8(uint16_t addr) {
+  this->enable();
+  // Command 0x31: Read, No CRC, 1 Byte
+  this->write_byte(0x31);
+  this->write_byte(addr >> 8);
+  this->write_byte(addr & 0xFF);
+  uint8_t val = this->read_byte();
+  this->disable();
+  return val;
 }
 
 void PL7211Component::write_register_8(uint16_t addr, uint8_t data) {
@@ -53,7 +67,7 @@ uint16_t PL7211Component::read_register_16(uint16_t addr) {
   this->write_byte(addr >> 8);
   this->write_byte(addr & 0xFF);
   uint16_t val = 0;
-  val |= this->read_byte();            // Read Low Byte
+  val |= this->read_byte();                  // Read Low Byte
   val |= (uint16_t(this->read_byte()) << 8); // Read High Byte
   this->disable();
   return val;
